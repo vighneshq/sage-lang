@@ -2,21 +2,33 @@ import argparse
 
 from sage.tokens.tokens import TokenType, Token
 from sage.lexer.lexer import Lexer
+from sage.parser.parser import Parser
 
 
 if __name__ == "__main__":
 
-    src = '''x = y + 1\nInt Real\n"Hello \'x\''''
+    src = '''
+    while x + 5 < 10 {
+        y + 10;
+        12*x;
+    }
+
+    continue;
+
+    if x < 5 {
+        x + 5;
+        y * 10;
+    } else if b < 10 {
+        a + 5;
+        b * 10;
+    }
+
+    while x < 10 {
+
+    }
+    '''
 
     l = Lexer(src)
+    p = Parser(l)
 
-    while True:
-
-        try:
-            tok = l.get_next_token()
-            print(tok)
-            if tok.token_type == TokenType.EOF:
-                break
-        except Exception as e:
-            print(e.msg)
-
+    p.parse()

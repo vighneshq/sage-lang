@@ -47,10 +47,13 @@ class TokenType(Enum):
     IF              = "if"
     ELSE            = "else"
     WHILE           = "while"
+    BREAK           = "break"
+    CONTINUE        = "continue"
     # Misc
     LBRACE          = "{"
     RBRACE          = "}"
     DOT             = "."
+    SEMI_COLON      = ";"
     IDENT           = "identifier"
     EOF             = "EOF"
 

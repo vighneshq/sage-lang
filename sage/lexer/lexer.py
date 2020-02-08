@@ -1,5 +1,5 @@
 from sage.tokens.tokens import TokenType, Token, RESERVED_WORDS
-from sage.error.lexer_error import LexerError
+from sage.error.syntax_error import LexerError
 
 
 class Lexer:
@@ -131,7 +131,7 @@ class Lexer:
         """ Raise an exception while scanning.
 
         Raises:
-            Lexical error found while scanning.
+            LexerError Exception.
         """
 
         formatted_msg = "Line {line_no}, Column {col_no} - {msg}.".format(
@@ -317,7 +317,7 @@ class Lexer:
             if self._advance_if_match('='):
                 return self._make_token(TokenType.GREATER_EQUAL)
 
-            return make_token(TokenType.GREATER)
+            return self._make_token(TokenType.GREATER)
 
         if curr_char == '<':
             if self._advance_if_match('<'):
@@ -326,7 +326,7 @@ class Lexer:
             if self._advance_if_match('='):
                 return self._make_token(TokenType.LESSER_EQUAL)
 
-            return make_token(TokenType.LESSER)
+            return self._make_token(TokenType.LESSER)
 
         if curr_char == '!':
             if self._advance_if_match('='):
