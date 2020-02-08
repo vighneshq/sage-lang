@@ -2,7 +2,8 @@ from sage.ast.ast import AST
 
 
 class JumpStmt(AST):
-    """ Concrete-class representing break, continue, nodes in the ast.
+    """ Concrete-class representing break, continue statement nodes in
+    the ast.
 
     Attributes:
         token (Token): Token representing the 'break', 'continue'.
@@ -10,6 +11,19 @@ class JumpStmt(AST):
 
     def __init__(self, token):
         self.token = token
+
+
+class ReturnStmt(AST):
+    """ Concrete-class representing return statement nodes in the ast.
+
+    Attributes:
+        token (Token): Token representing the 'return'.
+        expr (Expr): Value to be returned if any.
+    """
+
+    def __init__(self, token, expr):
+        self.token = token
+        self.expr = expr
 
 
 class WhileStmt(AST):

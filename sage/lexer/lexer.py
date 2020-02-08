@@ -167,6 +167,10 @@ class Lexer:
     def _skip_formatting_and_comments(self):
         """ Skip spaces, tabs, carriage returns, newlines, & comments."""
 
+
+        # TODO-
+        # Possibly use \n as statement seperator instead of semi-colons
+        # like Golang
         while not self._is_at_end():
             curr_char = self._peek()
 

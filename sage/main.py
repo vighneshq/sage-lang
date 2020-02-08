@@ -9,6 +9,7 @@ if __name__ == "__main__":
 
     src = '''
     while x + 5 < 10 {
+        count(5, 10.5);
         y + 10;
         12*x;
     }
@@ -24,8 +25,9 @@ if __name__ == "__main__":
     }
 
     while x < 10 {
-
+        return 5;
     }
+    count(a, b
     '''
 
     l = Lexer(src)

@@ -97,3 +97,24 @@ class VariableExpr(AST):
 
         return f"{self.value}"
 
+class CallExpr(AST):
+    """ Concrete-class representing call expression nodes
+    in the AST.
+
+    Attributes:
+        callee (Expr): VariableExpr node reprensenting the callee.
+        token (Token): Token representing the left parenthesis from the
+            function call.
+        args ([Expr]): List of expressions passed as arguments to the function.
+    """
+
+    def __init__(self, callee, token, args):
+        self.callee = callee
+        self.token = token
+        self.args = args
+
+    def __repr__(self):
+        """ Returns string representation to be used while debugging. """
+
+        return f"{self.callee}({self.args})"
+

@@ -49,10 +49,12 @@ class TokenType(Enum):
     WHILE           = "while"
     BREAK           = "break"
     CONTINUE        = "continue"
+    RETURN          = "return"
     # Misc
     LBRACE          = "{"
     RBRACE          = "}"
     DOT             = "."
+    COMMA           = ","
     SEMI_COLON      = ";"
     IDENT           = "identifier"
     EOF             = "EOF"

@@ -1,8 +1,8 @@
 from sage.tokens.tokens import TokenType, Token, RESERVED_WORDS
 from sage.lexer.lexer import Lexer
 from sage.ast.ast import AST
-from sage.ast.expr import BinaryExpr, UnaryExpr, LiteralExpr, GroupedExpr, VariableExpr
-from sage.ast.stmt import WhileStmt, JumpStmt, IfStmt, ExprStmt
+from sage.ast.expr import BinaryExpr, UnaryExpr, LiteralExpr, GroupedExpr, VariableExpr, CallExpr
+from sage.ast.stmt import WhileStmt, JumpStmt, ReturnStmt, IfStmt, ExprStmt
 from sage.error.syntax_error import LexerError, ParserError
 from sage.util.util import display_error
 
@@ -23,7 +23,7 @@ class Parser:
         self._lexer = lexer
         self._curr_token = None
 
-        # Initialize current, and peek
+        # Initialize current token
         self._advance()
 
     def _advance(self):
@@ -63,6 +63,27 @@ class Parser:
 
         return False
 
+    def _panic(self):
+        """ Restores the state of the parser so that it can continue
+        parsing and check the remainder of the program for more errors.
+
+        The Parser advances until it reaches the end or a token-class
+        that can possibly begin a new statement.
+        """
+
+        prev = self._advance()
+        while not self._is_at_end():
+
+            if prev.token_type == TokenType.SEMI_COLON:
+                return
+
+            if self._check(
+                    TokenType.WHILE, TokenType.BREAK,
+                    TokenType.CONTINUE):
+
+                return
+            prev = self._advance()
+
     def _error(self, msg):
         """ Raises error found while parsing.
 
@@ -75,7 +96,7 @@ class Parser:
         if curr_token.token_type != TokenType.EOF:
             line_info = f"Line {curr_token.line_no}, Column {curr_token.col_no} near [Lexeme - {curr_token.value}] -"
         else:
-            line_info = f"Line {curr_token.line_no}, Column {curr_token.col_no} -] -"
+            line_info = f"Line {curr_token.line_no}, Column {curr_token.col_no} -"
 
         formatted_msg = f"{line_info} {msg}."
 
@@ -108,7 +129,7 @@ class Parser:
             <literal_expr> := <bool_lit> | <char_lit> | <int_lit> | <real_lit>
                                 <string_lit>
             <variable_expr> := <identifier>
-            <grouped_expr>  := "(" <expr> ")"
+            <grouped_expr> := "(" <expr> ")"
         """
 
         if self._check(TokenType.IDENT):
@@ -135,14 +156,54 @@ class Parser:
 
         self._error("Unexpected token")
 
+    def _parse_function_call(self, callee):
+        """ Parses a function call expression.
+
+        Corresponding grammar rule for parsing.
+            <function_call_expr> := <primary_expr> "(" <arg_list> ")"
+            <arg_list> := { <expr> }
+        """
+
+        paren_token = self._advance()
+        args = []
+
+        while not self._check(TokenType.RPAREN):
+            args.append(self._parse_expr())
+
+            if self._check(TokenType.COMMA):
+                self._advance()
+            else:
+                break
+
+        self._force_advance(TokenType.RPAREN, "Expect ')' after function arguments")
+
+        return CallExpr(callee, paren_token, args)
+
+    def _parse_call_expr(self):
+        """ Parses call-expressions such as function-calls.
+
+        Corresponding grammar rule for parsing.
+            <call_expr> := <primary_expr> | <function_call_expr>
+
+        # TODO - Add other types of calls (or nested calls) when more
+            data-structures/features are added.
+        """
+
+        expr = self._parse_primary_expr()
+
+        if self._check(TokenType.LPAREN):
+            expr = self._parse_function_call(expr)
+
+        return expr
+
     def _parse_exponent_expr(self):
         """ Parses exponentiation expression.
 
         Corresponding grammar rule for parsing.
-            <expr_expr> := <primary_expr> [ "**" <expr_expr> ]
+            <expr_expr> := <call_expr> [ "**" <expr_expr> ]
         """
 
-        expr = self._parse_primary_expr()
+        expr = self._parse_call_expr()
         if self._check(TokenType.EXP):
             op = self._advance()
 
@@ -156,7 +217,7 @@ class Parser:
         """ Parse unary expression.
 
         Corresponding grammar rule for parsing.
-            <unary_op>   := "-" | "~"
+            <unary_op> := "-" | "~"
             <unary_expr> := <unary_op> <unary_expr> | <exp_expr>
         """
 
@@ -174,7 +235,7 @@ class Parser:
         same precedence as multiplication.
 
         Corresponding grammar rule for parsing.
-            <mul_op>   := "*" | "/" | "%" | ">>" | "<<"
+            <mul_op> := "*" | "/" | "%" | ">>" | "<<"
             <mul_expr> := <unary_expr> { <mul_op> <unary_expr> }
         Operators - *, /, %
         """
@@ -196,7 +257,7 @@ class Parser:
         same precedence as addition.
 
         Corresponding grammar rule for parsing.
-            <add_op>   := "+" | "_" | "|" | ">" | ">=" | "<" | "<="
+            <add_op> := "+" | "-" | "|" | "^"
             <add_expr> := <mul_expr> { <add_op> <mul_expr> }
         """
 
@@ -216,7 +277,7 @@ class Parser:
         """ Parses a conditional expression.
 
         Corresponding grammar rule for parsing.
-            <cond_op>   := "==" | "!=" | ">" | ">=" | "<" | "<="
+            <cond_op> := "==" | "!=" | ">" | ">=" | "<" | "<="
             <cond_expr> := <add_expr> { <cond_op> <add_expr> }
         """
 
@@ -306,6 +367,23 @@ class Parser:
 
         return JumpStmt(jump_token)
 
+    def _parse_return_stmt(self):
+        """ Parses a return statement.
+
+        Corresponding grammar rule for parsing.
+            <return_stmt> := "return" [ <expr> ] ";"
+        """
+
+        return_token = self._advance()
+
+        expr = None
+        if not self._check(TokenType.SEMI_COLON):
+            expr = self._parse_expr()
+
+        self._force_advance(TokenType.SEMI_COLON, "Expect ';' return statement")
+
+        return ReturnStmt(return_token, expr)
+
     def _parse_while_stmt(self):
         """ Parses a while statement.
 
@@ -339,7 +417,7 @@ class Parser:
 
         then = []
         els = []
-        
+
         self._force_advance(TokenType.LBRACE, "Expect '{' after if condition")
         while not self._is_at_end() and not self._check(TokenType.RBRACE):
             then.append(self._parse_stmt())
@@ -381,40 +459,22 @@ class Parser:
         """ Parses a statement and returns the corresponding ast node.
 
         Corresponding grammar rule for parsing.
-            <stmt> := <while_stmt> | <expr_stmt>
+            <stmt> := <while_stmt> | <if_stmt> | <jump_stmt> | <return_stmt>
+                | <expr_stmt>
 
         Returns:
             AST: Root node of the expression
         """
 
-        if self._check(TokenType.BREAK, TokenType.CONTINUE):
-            return self._parse_jump_stmt()
         if self._check(TokenType.WHILE):
             return self._parse_while_stmt()
         if self._check(TokenType.IF):
             return self._parse_if_stmt()
+        if self._check(TokenType.BREAK, TokenType.CONTINUE):
+            return self._parse_jump_stmt()
+        if self._check(TokenType.RETURN):
+            return self._parse_return_stmt()
         return self._parse_expr_stmt()
-
-    def _panic(self):
-        """ Restores the state of the parser so that it can continue
-        parsing and check the remainder of the program for more errors.
-
-        The Parser advances until it reaches the end or a token-class
-        that can possibly begin a new statement.
-        """
-
-        prev = self._advance()
-        while not self._is_at_end():
-
-            if prev.token_type == TokenType.SEMI_COLON:
-                return
-
-            if self._check(
-                    TokenType.WHILE, TokenType.BREAK,
-                    TokenType.CONTINUE):
-
-                return
-            prev = self._advance()
 
     def parse(self):
         """ Root function where the token stream begins to get parsed.
@@ -429,21 +489,31 @@ class Parser:
             try:
                 stmt = self._parse_stmt()
                 print("***")
+                if isinstance(stmt, ExprStmt):
+                    print(stmt.expr)
+                    continue
                 print("\t", stmt.token)
                 if isinstance(stmt, WhileStmt):
                     print("\t", stmt.cond)
                     for child in stmt.body:
-                        print("\t", child)
+                        if isinstance(child, ExprStmt):
+                            print("\t", child.expr)
+                        else:
+                            print("\t", child)
                 if isinstance(stmt, IfStmt):
                     print("\t", stmt.cond)
                     print("\tThen - ")
                     for child in stmt.then:
-                        print("\t\t", child)
+                        if isinstance(child, ExprStmt):
+                            print("\t", child.expr)
+                        else:
+                            print("\t", child)
                     print("\tElse - ")
                     for child in stmt.els:
-                        print("\t\t", child)
-                if isinstance(stmt, ExprStmt):
-                    print(stmt.expr)
+                        if isinstance(child, ExprStmt):
+                            print("\t", child.expr)
+                        else:
+                            print("\t", child)
                 print("***")
 
             except (LexerError, ParserError) as e:
