@@ -125,11 +125,11 @@ class Parser:
         and identifiers.
 
         Corresponding grammar rule for parsing.
-            <primary_expr> := <literal_expr> | <variable_expr> | <grouped_expr>
-            <literal_expr> := <bool_lit> | <char_lit> | <int_lit> | <real_lit>
-                                <string_lit>
-            <variable_expr> := <identifier>
-            <grouped_expr> := "(" <expr> ")"
+            primary_expr := literal_expr | variable_expr | grouped_expr
+            literal_expr := bool_lit | char_lit | int_lit | real_lit
+                                string_lit
+            variable_expr := identifier
+            grouped_expr := "(" expr ")"
         """
 
         if self._check(TokenType.IDENT):
@@ -160,8 +160,8 @@ class Parser:
         """ Parses a function call expression.
 
         Corresponding grammar rule for parsing.
-            <function_call_expr> := <primary_expr> "(" <arg_list> ")"
-            <arg_list> := { <expr> }
+            function_call_expr := primary_expr "(" arg_list ")"
+            arg_list := { expr }
         """
 
         paren_token = self._advance()
@@ -183,7 +183,7 @@ class Parser:
         """ Parses call-expressions such as function-calls.
 
         Corresponding grammar rule for parsing.
-            <call_expr> := <primary_expr> | <function_call_expr>
+            call_expr := primary_expr | function_call_expr
 
         # TODO - Add other types of calls (or nested calls) when more
             data-structures/features are added.
@@ -200,7 +200,7 @@ class Parser:
         """ Parses exponentiation expression.
 
         Corresponding grammar rule for parsing.
-            <expr_expr> := <call_expr> [ "**" <expr_expr> ]
+            exp_expr := call_expr [ "**" exp_expr ]
         """
 
         expr = self._parse_call_expr()
@@ -217,8 +217,8 @@ class Parser:
         """ Parse unary expression.
 
         Corresponding grammar rule for parsing.
-            <unary_op> := "-" | "~"
-            <unary_expr> := <unary_op> <unary_expr> | <exp_expr>
+            unary_op := "-" | "~"
+            unary_expr := unary_op unary_expr | exp_expr
         """
 
         if self._check(TokenType.SUB, TokenType.BIT_NOT):
@@ -235,8 +235,8 @@ class Parser:
         same precedence as multiplication.
 
         Corresponding grammar rule for parsing.
-            <mul_op> := "*" | "/" | "%" | ">>" | "<<"
-            <mul_expr> := <unary_expr> { <mul_op> <unary_expr> }
+            mul_op := "*" | "/" | "%" | ">>" | "<<"
+            mul_expr := unary_expr { mul_op unary_expr }
         Operators - *, /, %
         """
 
@@ -257,8 +257,8 @@ class Parser:
         same precedence as addition.
 
         Corresponding grammar rule for parsing.
-            <add_op> := "+" | "-" | "|" | "^"
-            <add_expr> := <mul_expr> { <add_op> <mul_expr> }
+            add_op := "+" | "-" | "|" | "^"
+            add_expr := mul_expr { add_op mul_expr }
         """
 
         expr = self._parse_mul_expr()
@@ -277,8 +277,8 @@ class Parser:
         """ Parses a conditional expression.
 
         Corresponding grammar rule for parsing.
-            <cond_op> := "==" | "!=" | ">" | ">=" | "<" | "<="
-            <cond_expr> := <add_expr> { <cond_op> <add_expr> }
+            cond_op := "==" | "!=" | ">" | ">=" | "<" | "<="
+            cond_expr := add_expr { cond_op add_expr }
         """
 
         expr = self._parse_add_expr()
@@ -298,7 +298,7 @@ class Parser:
         """ Parses a unary not expression.
 
         Corresponding grammar rule for parsing.
-            <not_expr> := "not" <not_expr> | <cond_expr>
+            not_expr := "not" not_expr | cond_expr
         """
 
         if self._check(TokenType.NOT):
@@ -313,7 +313,7 @@ class Parser:
         """ Parses a logical and expression.
 
         Corresponding grammar rule for parsing.
-            <not_expr> := <not_expr> { "and"  <not_expr> }
+            and_expr := not_expr { "and"  not_expr }
         """
 
         expr = self._parse_not_expr()
@@ -330,7 +330,7 @@ class Parser:
         """ Parses a logical or expression.
 
         Corresponding grammar rule for parsing.
-            <or_expr> := <and_expr> { "or"  <and_expr> }
+            or_expr := and_expr { "or"  and_expr }
         """
 
         expr = self._parse_and_expr()
@@ -346,7 +346,7 @@ class Parser:
         """ Parses an expression and returns the corresponding ast node.
 
         Corresponding grammar rule for parsing.
-            <expr> := <or_expr>
+            expr := or_expr
 
         Returns:
             AST: Root node of the expression
@@ -358,7 +358,7 @@ class Parser:
         """ Parses a continue, break statement.
 
         Corresponding grammar rule for parsing.
-            <jump_stmt> := [ "break" | "continue" ] ";"
+            jump_stmt := [ "break" | "continue" ] ";"
         """
 
         jump_token = self._advance()
@@ -371,7 +371,7 @@ class Parser:
         """ Parses a return statement.
 
         Corresponding grammar rule for parsing.
-            <return_stmt> := "return" [ <expr> ] ";"
+            return_stmt := "return" [ expr ] ";"
         """
 
         return_token = self._advance()
@@ -388,8 +388,8 @@ class Parser:
         """ Parses a while statement.
 
         Corresponding grammar rule for parsing.
-            <while_stmt> := "while" <expr> "{" <stmt_list>  "}"
-            <stmt_list> := <stmt> { <stmt> }
+            while_stmt := "while" expr "{" stmt_list  "}"
+            stmt_list := stmt { stmt }
         """
 
         while_token = self._advance()
@@ -459,8 +459,8 @@ class Parser:
         """ Parses a statement and returns the corresponding ast node.
 
         Corresponding grammar rule for parsing.
-            <stmt> := <while_stmt> | <if_stmt> | <jump_stmt> | <return_stmt>
-                | <expr_stmt>
+            stmt := while_stmt | if_stmt | jump_stmt | return_stmt
+                | expr_stmt
 
         Returns:
             AST: Root node of the expression
