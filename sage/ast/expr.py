@@ -1,4 +1,5 @@
 from sage.ast.ast import AST
+from sage.util.util import unpack_list
 
 
 class BinaryExpr(AST):
@@ -19,7 +20,12 @@ class BinaryExpr(AST):
     def __repr__(self):
         """ Returns string representation to be used while debugging. """
 
-        return f"({self.token.value} {self.left} {self.right})"
+        return f"({self.left} {self.token.value} {self.right})"
+
+    def __str__(self):
+        """ For sake of completeness, purpose same as __repr__."""
+
+        return self.__repr__()
 
 
 class UnaryExpr(AST):
@@ -40,6 +46,11 @@ class UnaryExpr(AST):
 
         return f"({self.token.value} {self.right})"
 
+    def __str__(self):
+        """ For sake of completeness, purpose same as __repr__."""
+
+        return self.__repr__()
+
 
 class GroupedExpr(AST):
     """ Concrete-class representing grouped (parenthesized)
@@ -56,8 +67,12 @@ class GroupedExpr(AST):
 
     def __repr__(self):
         """ Returns string representation to be used while debugging. """
+        return f"{self.expr}"
 
-        return f"({self.expr})"
+    def __str__(self):
+        """ For sake of completeness, purpose same as __repr__."""
+
+        return self.__repr__()
 
 
 class LiteralExpr(AST):
@@ -78,6 +93,11 @@ class LiteralExpr(AST):
 
         return f"{self.value}"
 
+    def __str__(self):
+        """ For sake of completeness, purpose same as __repr__."""
+
+        return self.__repr__()
+
 
 class VariableExpr(AST):
     """ Concrete-class representing variable (identifier) nodes
@@ -96,6 +116,12 @@ class VariableExpr(AST):
         """ Returns string representation to be used while debugging. """
 
         return f"{self.value}"
+
+    def __str__(self):
+        """ For sake of completeness, purpose same as __repr__."""
+
+        return self.__repr__()
+
 
 class CallExpr(AST):
     """ Concrete-class representing call expression nodes
@@ -116,5 +142,9 @@ class CallExpr(AST):
     def __repr__(self):
         """ Returns string representation to be used while debugging. """
 
-        return f"{self.callee}({self.args})"
+        return f"{self.callee}({unpack_list(self.args)})"
 
+    def __str__(self):
+        """ For sake of completeness, purpose same as __repr__."""
+
+        return self.__repr__()

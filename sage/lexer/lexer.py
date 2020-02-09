@@ -167,7 +167,6 @@ class Lexer:
     def _skip_formatting_and_comments(self):
         """ Skip spaces, tabs, carriage returns, newlines, & comments."""
 
-
         # TODO-
         # Possibly use \n as statement seperator instead of semi-colons
         # like Golang
@@ -253,7 +252,6 @@ class Lexer:
 
         return self._make_token(TokenType.CHAR_LIT, value)
 
-
     def _handle_string(self):
         """ Tokenize a string literal.
 
@@ -273,7 +271,6 @@ class Lexer:
         value = self._get_lexeme()[1:-1]
 
         return self._make_token(TokenType.STRING_LIT, value)
-
 
     def get_next_token(self):
         """ Tokenize the next lexeme.
@@ -350,4 +347,3 @@ class Lexer:
             self._error("Unexpected character")
         else:
             return self._make_token(token_type)
-

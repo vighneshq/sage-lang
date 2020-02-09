@@ -1,7 +1,8 @@
 from sage.tokens.tokens import TokenType, Token, RESERVED_WORDS
 from sage.lexer.lexer import Lexer
 from sage.ast.ast import AST
-from sage.ast.expr import BinaryExpr, UnaryExpr, LiteralExpr, GroupedExpr, VariableExpr, CallExpr
+from sage.ast.expr import (BinaryExpr, UnaryExpr, LiteralExpr,
+                           GroupedExpr, VariableExpr, CallExpr)
 from sage.ast.stmt import WhileStmt, JumpStmt, ReturnStmt, IfStmt, ExprStmt
 from sage.error.syntax_error import LexerError, ParserError
 from sage.util.util import display_error
@@ -92,11 +93,11 @@ class Parser:
         """
 
         curr_token = self._curr_token
-        line_info = None
+        line_info = f"Line {curr_token.line_no}, Column {curr_token.col_no}"
         if curr_token.token_type != TokenType.EOF:
-            line_info = f"Line {curr_token.line_no}, Column {curr_token.col_no} near [Lexeme - {curr_token.value}] -"
+            line_info = f"{line_info} near [Lexeme - {curr_token.value}] -"
         else:
-            line_info = f"Line {curr_token.line_no}, Column {curr_token.col_no} -"
+            line_info = f"{line_info} -"
 
         formatted_msg = f"{line_info} {msg}."
 
@@ -108,7 +109,8 @@ class Parser:
         Advances if the token classes match.
 
         Args:
-            expected_type (TokenType): TokenType required for the current token.
+            expected_type (TokenType): TokenType required for the current
+                token.
             msg (string): Error message to be displayed if the token class does
                 not match.
         """
@@ -126,8 +128,7 @@ class Parser:
 
         Corresponding grammar rule for parsing.
             primary_expr := literal_expr | variable_expr | grouped_expr
-            literal_expr := bool_lit | char_lit | int_lit | real_lit
-                                string_lit
+            literal_expr := literal
             variable_expr := identifier
             grouped_expr := "(" expr ")"
         """
@@ -208,10 +209,9 @@ class Parser:
             op = self._advance()
 
             right = self._parse_exponent_expr()
-            expr  =  BinaryExpr(expr, op, right)
+            expr = BinaryExpr(expr, op, right)
 
         return expr
-
 
     def _parse_unary_expr(self):
         """ Parse unary expression.
@@ -325,7 +325,6 @@ class Parser:
 
         return expr
 
-
     def _parse_or_expr(self):
         """ Parses a logical or expression.
 
@@ -358,7 +357,9 @@ class Parser:
         """ Parses a continue, break statement.
 
         Corresponding grammar rule for parsing.
-            jump_stmt := [ "break" | "continue" ] ";"
+            jump_stmt := break_stmt | continue_stmt
+            break_stmt := "break" ";"
+            continue_stmt := "continue" ";"
         """
 
         jump_token = self._advance()
@@ -380,7 +381,7 @@ class Parser:
         if not self._check(TokenType.SEMI_COLON):
             expr = self._parse_expr()
 
-        self._force_advance(TokenType.SEMI_COLON, "Expect ';' return statement")
+        self._force_advance(TokenType.SEMI_COLON, "Expect ';' after return statement")
 
         return ReturnStmt(return_token, expr)
 
@@ -389,7 +390,7 @@ class Parser:
 
         Corresponding grammar rule for parsing.
             while_stmt := "while" expr "{" stmt_list  "}"
-            stmt_list := stmt { stmt }
+            stmt_list := { stmt }
         """
 
         while_token = self._advance()
@@ -519,5 +520,3 @@ class Parser:
             except (LexerError, ParserError) as e:
                 display_error(e.msg)
                 self._panic()
-
-

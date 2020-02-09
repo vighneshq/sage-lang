@@ -22,4 +22,3 @@ class ParserError(Exception):
 
     def __init__(self, msg):
         self.msg = f"{self.__class__.__name__}: {msg}"
-

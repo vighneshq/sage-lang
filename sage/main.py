@@ -23,14 +23,14 @@ if __name__ == "__main__":
         a + 5;
         b * 10;
     }
-
+    1 + (2+3);
     while x < 10 {
         return 5;
     }
-    count(a, b
+    count(a, b + 10);
     '''
 
-    l = Lexer(src)
-    p = Parser(l)
+    lex = Lexer(src)
+    par = Parser(lex)
 
-    p.parse()
+    par.parse()

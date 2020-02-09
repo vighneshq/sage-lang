@@ -81,7 +81,7 @@ def _build_reserved_words():
     end_index = tt_list.index(TokenType.LBRACE)
 
     reserved_words = {
-        token_type.value:token_type
+        token_type.value: token_type
         for token_type in tt_list[start_index:end_index]
     }
 
@@ -143,4 +143,3 @@ class Token:
         """ For sake of completeness, purpose same as __repr__."""
 
         return self.__repr__()
-
