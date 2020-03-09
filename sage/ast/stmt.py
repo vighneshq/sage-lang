@@ -6,7 +6,7 @@ class JumpStmt(AST):
     the ast.
 
     Attributes:
-        token (Token): Token representing the 'break', 'continue'.
+        token (Token): Token representing the "break", "continue".
     """
 
     def __init__(self, token):
@@ -17,7 +17,7 @@ class ReturnStmt(AST):
     """ Concrete-class representing return statement nodes in the ast.
 
     Attributes:
-        token (Token): Token representing the 'return'.
+        token (Token): Token representing the "return".
         expr (Expr): Value to be returned if any.
     """
 
@@ -31,7 +31,7 @@ class WhileStmt(AST):
     in the ast.
 
     Attributes:
-        token (Token): Token representing the 'while'.
+        token (Token): Token representing the "while".
         cond (Expr): Boolean expression for the while.
         body ([Stmt]) : List of statements in the body
     """
@@ -47,7 +47,7 @@ class IfStmt(AST):
     in the ast.
 
     Attributes:
-        token (Token): Token represnting the 'if'.
+        token (Token): Token representing the "if".
         cond (Expr): Boolean expression for if.
         then ([Stmt]): Then-block of the if statement, exectued when condition
             is true.
@@ -73,3 +73,33 @@ class ExprStmt(AST):
 
     def __init__(self, expr):
         self.expr = expr
+
+
+class LetStmt(AST):
+    """ Concrete-class representing variable declaration nodes in the ast.
+
+    Attributes:
+        token (Token): token representing the "let"
+        var_list ([{str: Token}]): list of variables declared
+    """
+
+    def __init__(self, token, var_list):
+        self.token = token
+        self.var_list = var_list
+
+
+class FunctionStmt(AST):
+    """ Concrete-class representing function declaration nodes in the ast.
+
+    Attributes:
+        token (Token): token representing the function name.
+        param_types ([{str: Token}]):formal paramseters of the function.
+        body ([Stmt]): list of statements in the function body.
+        ret_type (Token): return type of the function (optional).
+    """
+
+    def __init__(self, token, params, ret_type, body):
+        self.token = token
+        self.params = params
+        self.body = body
+        self.ret_type = ret_type

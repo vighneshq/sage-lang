@@ -4,12 +4,16 @@
 
 ## General
 
-**program** &rarr; **stmt_list**
+**prog** &rarr; { **top_level_stmt** }
+
+### Top-Level Statements
+
+**top_level_stmt** &rarr; **function_stmt** | **let_stmt**
 
 ## Statements
 
 **stmt_list** &rarr; { **stmt** } \
-**stmt** &rarr; **while_stmt** | **if_stmt** | **jump_stmt** | **return_stmt** | **expr_stmt**
+**stmt** &rarr; **while_stmt** | **if_stmt** | **jump_stmt** | **return_stmt** | **expr_stmt** | **let_stmt** |
 
 ### While Statement
 
@@ -29,6 +33,18 @@
 ### Expression Statement
 
 **expr_stmt** &rarr; **expr** ";"
+
+### Let Statement
+
+**let_stmt** &rarr; "let" **var_list** ";" \
+**var_list** &rarr; identifier [ **identifier** ] [ = **expr** ] {"," **var_list** }
+
+### Function Stmt
+
+**function_stmt** &rarr; "function" **identifier** "(" [ **param_list** ] ")" [ "->" **identifier** ] "{" **stmt_list** "}" \
+**param_list** := **param** { "," **param** } \
+**param** := **identifer** **identifier** \
+**stmt_list** := { **stmt** }
 
 ## Expressions
 

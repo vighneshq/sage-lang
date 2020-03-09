@@ -1,9 +1,10 @@
 from sage.tokens.tokens import TokenType, Token, RESERVED_WORDS
 from sage.lexer.lexer import Lexer
-from sage.ast.ast import AST
+from sage.ast.ast import AST, Program
 from sage.ast.expr import (BinaryExpr, UnaryExpr, LiteralExpr,
                            GroupedExpr, VariableExpr, CallExpr)
-from sage.ast.stmt import WhileStmt, JumpStmt, ReturnStmt, IfStmt, ExprStmt
+from sage.ast.stmt import (WhileStmt, JumpStmt, ReturnStmt, IfStmt,
+                           ExprStmt, LetStmt, FunctionStmt)
 from sage.error.syntax_error import LexerError, ParserError
 from sage.util.util import display_error
 
@@ -16,12 +17,14 @@ class Parser:
 
     Attributes:
         _lexer (Lexer): Lexical Analyser.
+        _prev_token (Token): Previous token in the token stream.
         _curr_token (Token): Current token that the Parser is on.
         _peek_token (Token): Next token in the token stream.
     """
 
     def __init__(self, lexer):
         self._lexer = lexer
+        self._prev_token = None
         self._curr_token = None
 
         # Initialize current token
@@ -35,10 +38,10 @@ class Parser:
                 tokenized.
         """
 
-        curr_token = self._curr_token
+        self._prev_token = self._curr_token
         self._curr_token = self._lexer.get_next_token()
 
-        return curr_token
+        return self._prev_token
 
     def _is_at_end(self):
         """ Returns whether the Parser has reached the end of token stream. """
@@ -52,7 +55,8 @@ class Parser:
         the possible options
 
         Args:
-            args (str): Variable number of token-types to be matched against.
+            token_type_list (str): Variable number of token-types to be matched
+                against.
 
         Returns:
             bool: Indicating whether one of them matches the current token.
@@ -72,18 +76,18 @@ class Parser:
         that can possibly begin a new statement.
         """
 
-        prev = self._advance()
+        self._advance()
         while not self._is_at_end():
 
-            if prev.token_type == TokenType.SEMI_COLON:
+            if self._prev_token.token_type == TokenType.SEMI_COLON:
                 return
 
             if self._check(
                     TokenType.WHILE, TokenType.BREAK,
-                    TokenType.CONTINUE):
+                    TokenType.CONTINUE, TokenType.FUNCTION):
 
                 return
-            prev = self._advance()
+            self._advance()
 
     def _error(self, msg):
         """ Raises error found while parsing.
@@ -103,22 +107,23 @@ class Parser:
 
         raise ParserError(formatted_msg)
 
-    def _force_advance(self, expected_type, msg):
+    def _force_advance(self, msg, *expected_type_list):
         """ Makes the parser err if the token class is not equal to expected.
 
         Advances if the token classes match.
 
         Args:
-            expected_type (TokenType): TokenType required for the current
-                token.
+            expected_type_list (TokenType): variable number of tokentypes
+                required for the current token.
             msg (string): Error message to be displayed if the token class does
                 not match.
         """
 
-        if self._curr_token.token_type != expected_type:
-            self._error(msg)
+        for expected_type in expected_type_list:
+            if self._curr_token.token_type == expected_type:
+                return self._advance()
 
-        self._advance()
+        self._error(msg)
 
     def _parse_primary_expr(self):
         """ Parses primary expression.
@@ -151,7 +156,7 @@ class Parser:
             tok = self._advance()
             expr = self._parse_expr()
 
-            self._force_advance(TokenType.RPAREN, "Unbalanced parenthesis")
+            self._force_advance("Unbalanced parenthesis", TokenType.RPAREN)
 
             return GroupedExpr(tok, expr)
 
@@ -171,12 +176,11 @@ class Parser:
         while not self._check(TokenType.RPAREN):
             args.append(self._parse_expr())
 
-            if self._check(TokenType.COMMA):
-                self._advance()
-            else:
+            if not self._check(TokenType.COMMA):
                 break
+            self._advance()
 
-        self._force_advance(TokenType.RPAREN, "Expect ')' after function arguments")
+        self._force_advance("Expect ')' after function arguments", TokenType.RPAREN)
 
         return CallExpr(callee, paren_token, args)
 
@@ -363,8 +367,7 @@ class Parser:
         """
 
         jump_token = self._advance()
-        self._force_advance(
-            TokenType.SEMI_COLON, "Expect ';' after {}".format(jump_token.value))
+        self._force_advance("Expect ';' after {}".format(jump_token.value), TokenType.SEMI_COLON)
 
         return JumpStmt(jump_token)
 
@@ -381,7 +384,7 @@ class Parser:
         if not self._check(TokenType.SEMI_COLON):
             expr = self._parse_expr()
 
-        self._force_advance(TokenType.SEMI_COLON, "Expect ';' after return statement")
+        self._force_advance("Expect ';' after return statement", TokenType.SEMI_COLON)
 
         return ReturnStmt(return_token, expr)
 
@@ -397,12 +400,12 @@ class Parser:
         cond = self._parse_expr()
         body = []
 
-        self._force_advance(TokenType.LBRACE, "Expect '{' after while condition")
+        self._force_advance("Expect '{' after while condition", TokenType.LBRACE)
 
         while not self._is_at_end() and not self._check(TokenType.RBRACE):
             body.append(self._parse_stmt())
 
-        self._force_advance(TokenType.RBRACE, "Expected '}' to finish while block")
+        self._force_advance("Expected '}' to finish while block", TokenType.RBRACE)
 
         return WhileStmt(while_token, cond, body)
 
@@ -419,11 +422,11 @@ class Parser:
         then = []
         els = []
 
-        self._force_advance(TokenType.LBRACE, "Expect '{' after if condition")
+        self._force_advance("Expect '{' after if condition", TokenType.LBRACE)
         while not self._is_at_end() and not self._check(TokenType.RBRACE):
             then.append(self._parse_stmt())
 
-        self._force_advance(TokenType.RBRACE, "Expect '}' after if block")
+        self._force_advance("Expect '}' after if block", TokenType.RBRACE)
 
         if self._check(TokenType.ELSE):
             self._advance()
@@ -432,14 +435,102 @@ class Parser:
                 els.append(self._parse_stmt())
                 return IfStmt(if_token, cond, then, els)
 
-            self._force_advance(TokenType.LBRACE, "Expect '{' after else")
+            self._force_advance("Expect '{' after else", TokenType.LBRACE)
 
             while not self._is_at_end() and not self._check(TokenType.RBRACE):
                 els.append(self._parse_stmt())
 
-            self._force_advance(TokenType.RBRACE, "Expect '}' after else block")
+            self._force_advance("Expect '}' after else block", TokenType.RBRACE)
 
         return IfStmt(if_token, cond, then, els)
+
+    def _parse_let_stmt(self):
+        """ Parse function for variable declarations.
+
+        Corresponding grammar rule for parsing.
+            let_stmt := "let" var_list ";"
+            var_list := identifier [ identifier ] [ = expr ] { "," var_list }
+        """
+
+        let_token = self._advance()
+        var_list = []
+
+        while not self._check(TokenType.SEMI_COLON):
+            var_name = self._force_advance("Expect variable name", TokenType.IDENT)
+            var_type = None
+            var_init = None
+
+            if not self._check(TokenType.ASSIGN):
+                self._force_advance("Expect colon before data type", TokenType.COLON)
+                var_type = self._force_advance(
+                    "Expect variable's data type",
+                    TokenType.BOOL, TokenType.CHAR, TokenType.INT,
+                    TokenType.REAL, TokenType.STRING,
+                    TokenType.IDENT)
+
+            if self._check(TokenType.ASSIGN):
+                self._advance()
+                var_init = self._parse_expr()
+
+            var = {"type": var_type, "name": var_name, "init": var_init}
+            var_list.append(var)
+
+            if not self._check(TokenType.COMMA):
+                break
+            self._advance()
+
+        self._force_advance("Expect ';' after let statement", TokenType.SEMI_COLON)
+        return LetStmt(let_token, var_list)
+
+    def _parse_function_stmt(self):
+        """ Parse function declarations.
+
+        Corresponding grammar rule for parsing.
+            function_stmt := "function" identifier "(" [ param_list ] ")"
+                [ "->" identifier ] "{" stmt_list "}"
+            param_list := param { "," param }
+            param := identifer identifier
+            stmt_list := { stmt }
+        """
+
+        self._advance()
+        name_token = self._force_advance("Expect function name", TokenType.IDENT)
+
+        params = []
+        self._force_advance("Expect '(' before function parameters", TokenType.LPAREN)
+        while not self._check(TokenType.RPAREN):
+            param_name = self._force_advance("Expect parameter name", TokenType.IDENT)
+            self._force_advance("Expect colon before data type", TokenType.COLON)
+            param_type = self._force_advance(
+                "Expect parameter's data type",
+                TokenType.BOOL, TokenType.CHAR, TokenType.INT, TokenType.REAL,
+                TokenType.STRING, TokenType.IDENT)
+
+            param = {"type": param_type, "name": param_name}
+            params.append(param)
+
+            if not self._check(TokenType.COMMA):
+                break
+            self._advance()
+
+        self._force_advance("Expect ')' after function parameters", TokenType.RPAREN)
+
+        ret_type = None
+        if self._check(TokenType.ARROW):
+            self._advance()
+            ret_type = self._force_advance(
+                "Expect parameter's data type",
+                TokenType.BOOL, TokenType.CHAR, TokenType.INT, TokenType.REAL,
+                TokenType.STRING, TokenType.IDENT)
+
+        body = []
+        self._force_advance("Expect '{' before function body", TokenType.LBRACE)
+        while not self._is_at_end() and not self._check(TokenType.RBRACE):
+            body.append(self._parse_stmt())
+
+        self._force_advance("Expect '}' after function body", TokenType.RBRACE)
+
+        return FunctionStmt(name_token, params, ret_type, body)
 
     def _parse_expr_stmt(self):
         """ Parses expression statements such as function calls.
@@ -451,8 +542,7 @@ class Parser:
         """
 
         expr = self._parse_expr()
-        self._force_advance(
-            TokenType.SEMI_COLON, "Expect ';' after expression")
+        self._force_advance("Expect ';' after expression", TokenType.SEMI_COLON)
 
         return ExprStmt(expr)
 
@@ -461,7 +551,7 @@ class Parser:
 
         Corresponding grammar rule for parsing.
             stmt := while_stmt | if_stmt | jump_stmt | return_stmt
-                | expr_stmt
+                | expr_stmt | let_stmt
 
         Returns:
             AST: Root node of the expression
@@ -471,52 +561,47 @@ class Parser:
             return self._parse_while_stmt()
         if self._check(TokenType.IF):
             return self._parse_if_stmt()
-        if self._check(TokenType.BREAK, TokenType.CONTINUE):
-            return self._parse_jump_stmt()
+        if self._check(TokenType.LET):
+            return self._parse_let_stmt()
         if self._check(TokenType.RETURN):
             return self._parse_return_stmt()
+        if self._check(TokenType.BREAK, TokenType.CONTINUE):
+            return self._parse_jump_stmt()
         return self._parse_expr_stmt()
+
+    def _parse_top_level_stmt(self):
+        """ Parses a top-level statement.
+
+        Corresponding grammar rule for parsing.
+            top_level_stmt := function_stmt | let_stmt
+        """
+        
+        if self._check(TokenType.FUNCTION):
+            return self._parse_function_stmt()
+        if self._check(TokenType.LET):
+            return self._parse_let_stmt()
+
+        self._error("Unknown top-level statement.")
 
     def parse(self):
         """ Root function where the token stream begins to get parsed.
 
-        Parsing is done using a simple LL(k) top-down parsing algorithm.
+        Parsing is done using a simple LL(1) recursive descent parsing
+        algorithm.
+
+        Corresponding grammar rule for parsing.
+            prog := { top_level_stmt }
 
         Returns:
             AST: Root node of the abstract syntax tree.
         """
 
+        stmts = []
         while not self._check(TokenType.EOF):
             try:
-                stmt = self._parse_stmt()
-                print("***")
-                if isinstance(stmt, ExprStmt):
-                    print(stmt.expr)
-                    continue
-                print("\t", stmt.token)
-                if isinstance(stmt, WhileStmt):
-                    print("\t", stmt.cond)
-                    for child in stmt.body:
-                        if isinstance(child, ExprStmt):
-                            print("\t", child.expr)
-                        else:
-                            print("\t", child)
-                if isinstance(stmt, IfStmt):
-                    print("\t", stmt.cond)
-                    print("\tThen - ")
-                    for child in stmt.then:
-                        if isinstance(child, ExprStmt):
-                            print("\t", child.expr)
-                        else:
-                            print("\t", child)
-                    print("\tElse - ")
-                    for child in stmt.els:
-                        if isinstance(child, ExprStmt):
-                            print("\t", child.expr)
-                        else:
-                            print("\t", child)
-                print("***")
-
+                stmts.append(self._parse_top_level_stmt())
             except (LexerError, ParserError) as e:
                 display_error(e.msg)
                 self._panic()
+
+        return Program(stmts)

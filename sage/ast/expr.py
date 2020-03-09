@@ -104,13 +104,15 @@ class VariableExpr(AST):
     in the AST.
 
     Attributes:
-        token (Token): Token representing the literal lexeme.
-        value (Object): Literal value of the node (ex - True or 3.141)
+        token (Token): Token representing the variable lexeme.
+        value (Object): Identifier's lexeme.
+        data_type (Token): Identifier's data type.
     """
 
-    def __init__(self, token, value):
+    def __init__(self, token, value, data_type=None):
         self.token = token
         self.value = value
+        self.data_type = data_type
 
     def __repr__(self):
         """ Returns string representation to be used while debugging. """

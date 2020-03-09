@@ -333,6 +333,10 @@ class Lexer:
             if self._advance_if_match('='):
                 return self._make_token(TokenType.NOT_EQUAL)
 
+        if curr_char == '-':
+            if self._advance_if_match('>'):
+                return self._make_token(TokenType.ARROW)
+
         if curr_char == '\'':
             return self._handle_character()
 

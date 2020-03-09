@@ -8,7 +8,9 @@ from sage.parser.parser import Parser
 if __name__ == "__main__":
 
     src = '''
-    while x + 5 < 10 {
+    function main()
+    {
+        while x + 5 < 10 {
         count(5, 10.5);
         y + 10;
         12*x;
@@ -28,9 +30,14 @@ if __name__ == "__main__":
         return 5;
     }
     count(a, b + 10);
+
+    let x: Real = 5.6, y: Int = 6;
+    }
     '''
 
     lex = Lexer(src)
     par = Parser(lex)
 
-    par.parse()
+    prog = par.parse()
+    for stmt in prog.stmts:
+        print(stmt)

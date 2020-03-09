@@ -50,12 +50,16 @@ class TokenType(Enum):
     BREAK           = "break"
     CONTINUE        = "continue"
     RETURN          = "return"
+    FUNCTION        = "function"
+    LET             = "let"
     # Misc
     LBRACE          = "{"
     RBRACE          = "}"
     DOT             = "."
     COMMA           = ","
     SEMI_COLON      = ";"
+    COLON           = ":"
+    ARROW           = "->"
     IDENT           = "identifier"
     EOF             = "EOF"
 
