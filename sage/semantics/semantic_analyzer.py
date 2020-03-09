@@ -30,9 +30,12 @@ class SemanticAnalyzer(Visitor):
         self._scopes = {}
         self._inside_loop = False
         self._inside_function = False
+        self.had_error = False
 
     def _error(self, token, msg):
         """ Raises error found while parsing. """
+
+        self.had_error = True
 
         line_info = f"Line {token.line_no}, Column {token.col_no}"
         if token.token_type != TokenType.EOF:
@@ -85,8 +88,8 @@ class SemanticAnalyzer(Visitor):
                 function_name = stmt.token.value
                 if self._curr_scope.lookup(function_name, True) is not None:
                     self._error(
-                    stmt.token,
-                    f"Function '{function_name}' declared more than once")
+                        stmt.token,
+                        f"Function '{function_name}' declared more than once")
                     continue
 
                 function_scope = SymbolTable(self._curr_scope)
@@ -271,9 +274,9 @@ class SemanticAnalyzer(Visitor):
         no_of_args = len(node.args)
         if len(node.args) != len(function_symbol.params):
             self._error(
-            node.token,
-            f"Expected {len(function_symbol.params)} arguments to function"
-            + f", got {len(node.args)}")
+                node.token,
+                f"Expected {len(function_symbol.params)} arguments to function"
+                + f", got {len(node.args)}")
 
         curr_scope = self._curr_scope
         for arg in node.args:

@@ -29,6 +29,7 @@ class Lexer:
         self._curr = 0
         self._line_no = 1
         self._col_no = 0
+        self.had_error = False
 
     def _is_at_end(self):
         """ Check if the Lexer has reached the end of the source file.
@@ -134,6 +135,8 @@ class Lexer:
             LexerError Exception.
         """
 
+        self.had_error = True
+
         formatted_msg = "Line {line_no}, Column {col_no} - {msg}.".format(
             line_no=self._line_no,
             col_no=self._col_no,
@@ -202,11 +205,6 @@ class Lexer:
         value = self._get_lexeme()
         token_type = RESERVED_WORDS.get(value, TokenType.IDENT)
 
-        if token_type == TokenType.TRUE:
-            value = True
-        elif token_type == TokenType.FALSE:
-            value = False
-
         return self._make_token(token_type, value)
 
     def _handle_number(self):
@@ -221,8 +219,7 @@ class Lexer:
             self._advance()
 
         if self._peek() != '.' or not self._peek_next().isdigit():
-            value = int(self._get_lexeme())
-
+            value = self._get_lexeme()
             return self._make_token(TokenType.INT_LIT, value)
 
         self._advance()
@@ -230,8 +227,7 @@ class Lexer:
         while self._peek().isdigit():
             self._advance()
 
-        value = float(self._get_lexeme())
-
+        value = self._get_lexeme()
         return self._make_token(TokenType.REAL_LIT, value)
 
     def _handle_character(self):

@@ -19,7 +19,7 @@ if __name__ == "__main__":
         let x:Int, y:Int;
         x = y = z;
         let z: Int;
-        
+
         while x + 5 < 10 {
             count(5, 10.5, 11);
             y + 10;
@@ -28,7 +28,7 @@ if __name__ == "__main__":
         }
 
         break;
-        
+
         if x < 5 {
             x + 5;
             y * 10;

@@ -27,6 +27,7 @@ class Parser:
         self._prev_token = None
         self._curr_token = None
         self._peek_token = None
+        self.had_error = False
 
         # Initialize current token
         self._advance()
@@ -99,6 +100,8 @@ class Parser:
             ParserError Exception.
         """
 
+        self.had_error = True
+        
         curr_token = self._curr_token
         line_info = f"Line {curr_token.line_no}, Column {curr_token.col_no}"
         if curr_token.token_type != TokenType.EOF:
@@ -250,7 +253,7 @@ class Parser:
         expr = self._parse_unary_expr()
         while self._check(
                 TokenType.MUL, TokenType.DIV, TokenType.MOD,
-                TokenType.BIT_LEFT, TokenType.BIT_RIGHT):
+                TokenType.BIT_LEFT, TokenType.BIT_RIGHT, TokenType.BIT_AND):
 
             op = self._advance()
 
