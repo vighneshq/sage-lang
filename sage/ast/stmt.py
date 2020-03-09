@@ -12,6 +12,15 @@ class JumpStmt(AST):
     def __init__(self, token):
         self.token = token
 
+    def accept(self, visitor):
+        """ Accept the visitor and run the right method.
+
+        Args:
+            visitor (Visitor): that wants to perform a certain action.
+        """
+
+        visitor.visit_jump_stmt(self)
+
 
 class ReturnStmt(AST):
     """ Concrete-class representing return statement nodes in the ast.
@@ -24,6 +33,40 @@ class ReturnStmt(AST):
     def __init__(self, token, expr):
         self.token = token
         self.expr = expr
+
+    def accept(self, visitor):
+        """ Accept the visitor and run the right method.
+
+        Args:
+            visitor (Visitor): that wants to perform a certain action.
+        """
+
+        visitor.visit_return_stmt(self)
+
+
+class BlockStmt(AST):
+    """ Concrete-class representing block nodes in the ast.
+
+    Each block represents a scope in the source code. Blocks are created by
+    If-Stmts, While-Stmts, Function Bodies.
+
+    Attributes:
+        token (Token): token representing the left curly brace.
+        stmts ([stmt]): List of statements in the block.
+    """
+
+    def __init__(self, token, stmts):
+        self.token = token
+        self.stmts = stmts
+
+    def accept(self, visitor):
+        """ Accept the visitor and run the right method.
+
+        Args:
+            visitor (Visitor): that wants to perform a certain action.
+        """
+
+        visitor.visit_block_stmt(self)
 
 
 class WhileStmt(AST):
@@ -40,6 +83,15 @@ class WhileStmt(AST):
         self.token = token
         self.cond = cond
         self.body = body
+
+    def accept(self, visitor):
+        """ Accept the visitor and run the right method.
+
+        Args:
+            visitor (Visitor): that wants to perform a certain action.
+        """
+
+        visitor.visit_while_stmt(self)
 
 
 class IfStmt(AST):
@@ -61,6 +113,15 @@ class IfStmt(AST):
         self.then = then
         self.els = els
 
+    def accept(self, visitor):
+        """ Accept the visitor and run the right method.
+
+        Args:
+            visitor (Visitor): that wants to perform a certain action.
+        """
+
+        visitor.visit_if_stmt(self)
+
 
 class ExprStmt(AST):
     """ Concrete-class representing expression statement nodes in the ast.
@@ -68,11 +129,22 @@ class ExprStmt(AST):
     Expression statements include function calls.
 
     Attributes:
+        token (Token): token of the expression node.
         expr (Expr): expression part of the statement.
     """
 
-    def __init__(self, expr):
+    def __init__(self, token, expr):
+        self.token = token
         self.expr = expr
+
+    def accept(self, visitor):
+        """ Accept the visitor and run the right method.
+
+        Args:
+            visitor (Visitor): that wants to perform a certain action.
+        """
+
+        visitor.visit_expr_stmt(self)
 
 
 class LetStmt(AST):
@@ -86,6 +158,15 @@ class LetStmt(AST):
     def __init__(self, token, var_list):
         self.token = token
         self.var_list = var_list
+
+    def accept(self, visitor):
+        """ Accept the visitor and run the right method.
+
+        Args:
+            visitor (Visitor): that wants to perform a certain action.
+        """
+
+        visitor.visit_let_stmt(self)
 
 
 class FunctionStmt(AST):
@@ -103,3 +184,12 @@ class FunctionStmt(AST):
         self.params = params
         self.body = body
         self.ret_type = ret_type
+
+    def accept(self, visitor):
+        """ Accept the visitor and run the right method.
+
+        Args:
+            visitor (Visitor): that wants to perform a certain action.
+        """
+
+        visitor.visit_function_stmt(self)

@@ -1,6 +1,7 @@
-from enum import Enum
+from enum import Enum, unique
 
 
+@unique
 class TokenType(Enum):
     """ Enumerated class representing token-classes of our language."""
 

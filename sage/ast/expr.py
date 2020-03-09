@@ -1,21 +1,45 @@
+from abc import abstractmethod
+
 from sage.ast.ast import AST
 from sage.util.util import unpack_list
 
 
-class BinaryExpr(AST):
+class Expr(AST):
+    """ Abstract base class to represent expression nodes in the ast. """
+
+    def __init__(self, data_type=None):
+        self.data_type = data_type
+
+    @abstractmethod
+    def __repr__(self):
+        """ Return a string representation to be used while debugging. """
+        pass
+
+
+class BinaryExpr(Expr):
     """ Concrete-class representing binary expression nodes
     in the ast.
 
     Attributes:
-        left (AST): Left operand of the expression.
+        left (Expr): Left operand of the expression.
         token (Token): Token representing the operator of the expression.
-        right (AST): Right operand of the expression.
+        right (Expr): Right operand of the expression.
     """
 
-    def __init__(self, left, token, right):
+    def __init__(self, left, token, right, data_type=None):
+        super().__init__(data_type)
         self.left = left
         self.token = token
         self.right = right
+
+    def accept(self, visitor):
+        """ Accept the visitor and run the right method.
+
+        Args:
+            visitor (Visitor): that wants to perform a certain action.
+        """
+
+        visitor.visit_binary_expr(self)
 
     def __repr__(self):
         """ Returns string representation to be used while debugging. """
@@ -28,18 +52,28 @@ class BinaryExpr(AST):
         return self.__repr__()
 
 
-class UnaryExpr(AST):
+class UnaryExpr(Expr):
     """ Concrete-class representing unary expression nodes
     in the ast.
 
     Attributes:
         token (Token): Token representing the operator of the expression.
-        right (AST): Right operand of the expression.
+        right (Expr): Right operand of the expression.
     """
 
-    def __init__(self, token, right):
+    def __init__(self, token, right, data_type=None):
+        super().__init__(data_type)
         self.token = token
         self.right = right
+
+    def accept(self, visitor):
+        """ Accept the visitor and run the right method.
+
+        Args:
+            visitor (Visitor): that wants to perform a certain action.
+        """
+
+        visitor.visit_unary_expr(self)
 
     def __repr__(self):
         """ Returns string representation to be used while debugging. """
@@ -52,18 +86,28 @@ class UnaryExpr(AST):
         return self.__repr__()
 
 
-class GroupedExpr(AST):
+class GroupedExpr(Expr):
     """ Concrete-class representing grouped (parenthesized)
     expression nodes in the ast.
 
     Attributes:
         token (Token): Token representing the left parenthesis.
-        expr (AST): Expression
+        expr (Expr): Expression
     """
 
-    def __init__(self, token, expr):
+    def __init__(self, token, expr, data_type=None):
+        super().__init__(data_type)
         self.token = token
         self.expr = expr
+
+    def accept(self, visitor):
+        """ Accept the visitor and run the right method.
+
+        Args:
+            visitor (Visitor): that wants to perform a certain action.
+        """
+
+        visitor.visit_grouped_expr(self)
 
     def __repr__(self):
         """ Returns string representation to be used while debugging. """
@@ -75,7 +119,7 @@ class GroupedExpr(AST):
         return self.__repr__()
 
 
-class LiteralExpr(AST):
+class LiteralExpr(Expr):
     """ Concrete-class representing literal expression nodes
     in the AST.
 
@@ -84,9 +128,19 @@ class LiteralExpr(AST):
         value (Object): Literal value of the node (ex - True or 3.141)
     """
 
-    def __init__(self, token, value):
+    def __init__(self, token, value, data_type=None):
+        super().__init__(data_type)
         self.token = token
         self.value = value
+
+    def accept(self, visitor):
+        """ Accept the visitor and run the right method.
+
+        Args:
+            visitor (Visitor): that wants to perform a certain action.
+        """
+
+        visitor.visit_literal_expr(self)
 
     def __repr__(self):
         """ Returns string representation to be used while debugging. """
@@ -99,7 +153,7 @@ class LiteralExpr(AST):
         return self.__repr__()
 
 
-class VariableExpr(AST):
+class VariableExpr(Expr):
     """ Concrete-class representing variable (identifier) nodes
     in the AST.
 
@@ -110,9 +164,18 @@ class VariableExpr(AST):
     """
 
     def __init__(self, token, value, data_type=None):
+        super().__init__(data_type)
         self.token = token
         self.value = value
-        self.data_type = data_type
+
+    def accept(self, visitor):
+        """ Accept the visitor and run the right method.
+
+        Args:
+            visitor (Visitor): that wants to perform a certain action.
+        """
+
+        visitor.visit_variable_expr(self)
 
     def __repr__(self):
         """ Returns string representation to be used while debugging. """
@@ -125,7 +188,7 @@ class VariableExpr(AST):
         return self.__repr__()
 
 
-class CallExpr(AST):
+class CallExpr(Expr):
     """ Concrete-class representing call expression nodes
     in the AST.
 
@@ -136,10 +199,20 @@ class CallExpr(AST):
         args ([Expr]): List of expressions passed as arguments to the function.
     """
 
-    def __init__(self, callee, token, args):
+    def __init__(self, callee, token, args, data_type=None):
+        super().__init__(data_type)
         self.callee = callee
         self.token = token
         self.args = args
+
+    def accept(self, visitor):
+        """ Accept the visitor and run the right method.
+
+        Args:
+            visitor (Visitor): that wants to perform a certain action.
+        """
+
+        visitor.visit_call_expr(self)
 
     def __repr__(self):
         """ Returns string representation to be used while debugging. """
