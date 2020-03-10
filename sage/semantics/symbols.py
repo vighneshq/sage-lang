@@ -55,15 +55,15 @@ class SymbolTable:
     about symbols.
 
     Attributes:
-        _symbols ({str: Symbol}): dictionary mapping the symbol name to the
+        symbols ({str: Symbol}): dictionary mapping the symbol name to the
             Symbol object.
-        _enclosing (SymbolTable): SymbolTable representing the enclosing
+        enclosing (SymbolTable): SymbolTable representing the enclosing
             scope.
     """
 
     def __init__(self, enclosing=None):
-        self._symbols = {}
-        self._enclosing = enclosing
+        self.symbols = {}
+        self.enclosing = enclosing
         self._init_builtins()
 
     def _init_builtins(self):
@@ -79,21 +79,29 @@ class SymbolTable:
     def insert(self, symbol):
         """ Insert the symbol into the symbol-table. """
 
-        self._symbols[symbol.name] = symbol
+        self.symbols[symbol.name] = symbol
 
     def remove(self, symbol):
         """ Remove the symbol from the symbol-table. """
 
-        del self._symbols[symbol.name]
+        del self.symbols[symbol.name]
 
-    def lookup(self, name, curr_scope_only=False):
+    def lookup(self, name, **kwargs):
         """ Return the symbol associated with the name (or None). """
 
-        symbol = self._symbols.get(name)
+        curr_scope_only = kwargs.get("curr_scope_only", False)
+
+        symbol = self.symbols.get(name)
         if symbol is not None:
             return symbol
 
-        if curr_scope_only or self._enclosing is None:
+        if curr_scope_only or self.enclosing is None:
             return None
 
-        return self._enclosing.lookup(name, curr_scope_only)
+        scope = self
+        while scope.enclosing is not None:
+            scope = scope.enclosing
+            symbol = scope.symbols.get(name)
+
+            if symbol is not None:
+                return symbol

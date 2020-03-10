@@ -21,15 +21,17 @@ class TestLexer:
         assert "$" == next_token.value
         assert TokenType.EOF == next_token.token_type
 
-    def _check_lexer_error(self, source):
+    def _check_lexer_error(self, source, msg):
         lexer = Lexer(source)
 
-        with pytest.raises(LexerError):
+        with pytest.raises(LexerError) as exc_info:
             while True:
                 next_token = lexer.get_next_token()
 
                 if next_token.token_type == TokenType.EOF:
                     break
+
+        assert msg in str(exc_info.value)
 
     def test_terminated_comment(self):
         source = """ -- This is a single line comment.
@@ -49,7 +51,7 @@ class TestLexer:
         comment will not be
         terminated"""
 
-        self._check_lexer_error(source)
+        self._check_lexer_error(source, "Non-terminating multi-line")
 
     def test_operators(self):
 
@@ -81,10 +83,10 @@ class TestLexer:
     def test_unterminated_literals(self):
 
         source = """'a x = y"""
-        self._check_lexer_error(source)
+        self._check_lexer_error(source, "Non-terminating")
 
         source = """ This "string is not terminated """
-        self._check_lexer_error(source)
+        self._check_lexer_error(source, "Non-terminating")
 
     def test_reserved_words(self):
         source = """true false Bool Char Int Real String and or not if else
@@ -117,9 +119,9 @@ class TestLexer:
 
         self._check_output(expected_output_list, source)
 
-    def test_unknown_character_error(self):
+    def test_unexpected_character_error(self):
         source = "!"
-        self._check_lexer_error(source)
+        self._check_lexer_error(source, "Unexpected character")
 
     def test_general(self):
         source = """

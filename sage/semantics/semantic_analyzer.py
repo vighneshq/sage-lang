@@ -25,13 +25,13 @@ class SemanticAnalyzer(Visitor):
             function-block
     """
 
-    def __init__(self, debug=False):
+    def __init__(self, **kwargs):
         self._curr_scope = SymbolTable()
         self._scopes = {}
         self._inside_loop = False
         self._inside_function = False
         self.had_error = False
-        self._debug = debug
+        self._debug = kwargs.get("debug", False)
 
     def _error(self, token, msg):
         """ Raises error found while parsing. """
@@ -89,7 +89,8 @@ class SemanticAnalyzer(Visitor):
         for stmt in node.stmts:
             if isinstance(stmt, FunctionStmt):
                 function_name = stmt.token.value
-                if self._curr_scope.lookup(function_name, True) is not None:
+                if self._curr_scope.lookup(
+                        function_name, curr_scope_only=True) is not None:
                     self._error(
                         stmt.token,
                         f"Function '{function_name}' declared more than once")
@@ -99,7 +100,7 @@ class SemanticAnalyzer(Visitor):
                 for param in stmt.params:
                     param_symbol = VariableSymbol(
                         param.value,
-                        param.data_type)
+                        param.data_type.value)
                     function_scope.insert(param_symbol)
 
                 ret_type = None
@@ -187,7 +188,8 @@ class SemanticAnalyzer(Visitor):
         """
 
         for var in node.var_list:
-            if self._curr_scope.lookup(var["name"].value, True) is not None:
+            if self._curr_scope.lookup(
+                    var["name"].value, curr_scope_only=True) is not None:
                 self._error(
                     var["name"],
                     "Variable '{}' declared more than once in same scope".format(
@@ -196,7 +198,7 @@ class SemanticAnalyzer(Visitor):
             if var["init"] is not None:
                 self._visit(var["init"])
 
-            variable_symbol = VariableSymbol(var["name"].value, var["type"])
+            variable_symbol = VariableSymbol(var["name"].value, var["type"].value)
             self._curr_scope.insert(variable_symbol)
 
     def visit_function_stmt(self, node):
@@ -279,8 +281,8 @@ class SemanticAnalyzer(Visitor):
         if len(node.args) != len(function_symbol.params):
             self._error(
                 node.token,
-                f"Expected {len(function_symbol.params)} arguments to function"
-                + f", got {len(node.args)}")
+                f"Expected {len(function_symbol.params)} argument(s) to "
+                + f"function, got {len(node.args)}")
 
         curr_scope = self._curr_scope
         for arg in node.args:
