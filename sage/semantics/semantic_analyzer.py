@@ -25,12 +25,13 @@ class SemanticAnalyzer(Visitor):
             function-block
     """
 
-    def __init__(self):
+    def __init__(self, debug=False):
         self._curr_scope = SymbolTable()
         self._scopes = {}
         self._inside_loop = False
         self._inside_function = False
         self.had_error = False
+        self._debug = debug
 
     def _error(self, token, msg):
         """ Raises error found while parsing. """
@@ -46,6 +47,8 @@ class SemanticAnalyzer(Visitor):
         formatted_msg = f"SemanticError: {line_info} {msg}."
 
         display_error(formatted_msg)
+        if self._debug:
+            raise SemanticError(formatted_msg)
 
     def check(self, prog):
         """ Entry method where the semantic analysis begins. """
@@ -187,7 +190,8 @@ class SemanticAnalyzer(Visitor):
             if self._curr_scope.lookup(var["name"].value, True) is not None:
                 self._error(
                     var["name"],
-                    "Variable '{}' declared more than once in same scope".format(var["name"].value))
+                    "Variable '{}' declared more than once in same scope".format(
+                        var["name"].value))
 
             if var["init"] is not None:
                 self._visit(var["init"])

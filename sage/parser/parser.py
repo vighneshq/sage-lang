@@ -101,7 +101,7 @@ class Parser:
         """
 
         self.had_error = True
-        
+
         curr_token = self._curr_token
         line_info = f"Line {curr_token.line_no}, Column {curr_token.col_no}"
         if curr_token.token_type != TokenType.EOF:
@@ -479,7 +479,8 @@ class Parser:
 
         Corresponding grammar rule for parsing.
             let_stmt := "let" var_list ";"
-            var_list := identifier [ identifier ] [ = expr ] { "," var_list }
+            var_list := identifier ( identifier | [ [ identifier ] = expr ] )
+                { "," var_list }
         """
 
         let_token = self._advance()
