@@ -4,7 +4,7 @@ from sage.ast.ast import AST, Program
 from sage.ast.expr import (BinaryExpr, UnaryExpr, LiteralExpr,
                            GroupedExpr, VariableExpr, CallExpr)
 from sage.ast.stmt import (BlockStmt, WhileStmt, JumpStmt, ReturnStmt, IfStmt,
-                           ExprStmt, LetStmt, FunctionStmt)
+                           ExprStmt, LetStmt, VarDecl, FunctionStmt, TypeStmt)
 from sage.error.syntax_error import LexerError, ParserError
 from sage.util.util import display_error
 
@@ -186,7 +186,8 @@ class Parser:
                 break
             self._advance()
 
-        self._force_advance("Expect ')' after function arguments", TokenType.RPAREN)
+        self._force_advance(
+            "Expect ')' after function arguments", TokenType.RPAREN)
 
         return CallExpr(callee, callee.token, args)
 
@@ -389,7 +390,8 @@ class Parser:
         """
 
         jump_token = self._advance()
-        self._force_advance("Expect ';' after {}".format(jump_token.value), TokenType.SEMI_COLON)
+        self._force_advance("Expect ';' after {}".format(
+            jump_token.value), TokenType.SEMI_COLON)
 
         return JumpStmt(jump_token)
 
@@ -406,7 +408,8 @@ class Parser:
         if not self._check(TokenType.SEMI_COLON):
             expr = self._parse_expr()
 
-        self._force_advance("Expect ';' after return statement", TokenType.SEMI_COLON)
+        self._force_advance(
+            "Expect ';' after return statement", TokenType.SEMI_COLON)
 
         return ReturnStmt(return_token, expr)
 
@@ -475,43 +478,53 @@ class Parser:
         return IfStmt(if_token, cond, then, els)
 
     def _parse_let_stmt(self):
-        """ Parse function for variable declarations.
+        """ Parse function for let statements.
 
         Corresponding grammar rule for parsing.
-            let_stmt := "let" var_list ";"
-            var_list := identifier ( identifier | [ [ identifier ] = expr ] )
-                { "," var_list }
+            let_stmt := "let" variables ";"
+            variables := var_decl { "," variables }
         """
 
         let_token = self._advance()
-        var_list = []
+        variables = []
 
         while not self._check(TokenType.SEMI_COLON):
-            var_name = self._force_advance("Expect variable name", TokenType.IDENT)
-            var_type = None
-            var_init = None
-
-            if not self._check(TokenType.ASSIGN):
-                self._force_advance("Expect colon before data type", TokenType.COLON)
-                var_type = self._force_advance(
-                    "Expect variable's data type",
-                    TokenType.BOOL, TokenType.CHAR, TokenType.INT,
-                    TokenType.REAL, TokenType.STRING,
-                    TokenType.IDENT)
-
-            if self._check(TokenType.ASSIGN):
-                self._advance()
-                var_init = self._parse_expr()
-
-            var = {"type": var_type, "name": var_name, "init": var_init}
-            var_list.append(var)
+            var = self._parse_var_decl()
+            variables.append(var)
 
             if not self._check(TokenType.COMMA):
                 break
             self._advance()
 
-        self._force_advance("Expect ';' after let statement", TokenType.SEMI_COLON)
-        return LetStmt(let_token, var_list)
+        self._force_advance(
+            "Expect ';' after let statement", TokenType.SEMI_COLON)
+        return LetStmt(let_token, variables)
+
+    def _parse_var_decl(self):
+        """ Parse function for variable declarations that occur as a part
+        of let statements.
+
+        Corresponding grammar rule for parsing.
+            var_decl := identifier ( identifier | [ [ identifier ] = expr ] )
+        """
+        var_name = self._force_advance("Expect variable name", TokenType.IDENT)
+        var_type = None
+        var_init = None
+
+        if not self._check(TokenType.ASSIGN):
+            self._force_advance(
+                "Expect colon before data type", TokenType.COLON)
+            var_type = self._force_advance(
+                "Expect variable's data type",
+                TokenType.BOOL, TokenType.CHAR, TokenType.INT,
+                TokenType.REAL, TokenType.STRING,
+                TokenType.IDENT)
+
+        if self._check(TokenType.ASSIGN):
+            self._advance()
+            var_init = self._parse_expr()
+
+        return VarDecl(var_name, var_type, var_init)
 
     def _parse_param(self):
         """ Parse formal function parameters.
@@ -520,7 +533,9 @@ class Parser:
             param := identifer identifier
         """
 
-        param_name = self._force_advance("Expect parameter name", TokenType.IDENT)
+        param_name = self._force_advance(
+            "Expect parameter name", TokenType.IDENT)
+
         self._force_advance("Expect colon before data type", TokenType.COLON)
         param_type = self._force_advance(
             "Expect parameter's data type",
@@ -540,10 +555,12 @@ class Parser:
         """
 
         self._advance()
-        name_token = self._force_advance("Expect function name", TokenType.IDENT)
+        name_token = self._force_advance(
+            "Expect function name", TokenType.IDENT)
 
         params = []
-        self._force_advance("Expect '(' before function parameters", TokenType.LPAREN)
+        self._force_advance(
+            "Expect '(' before function parameters", TokenType.LPAREN)
         while not self._check(TokenType.RPAREN):
 
             param = self._parse_param()
@@ -553,7 +570,8 @@ class Parser:
                 break
             self._advance()
 
-        self._force_advance("Expect ')' after function parameters", TokenType.RPAREN)
+        self._force_advance(
+            "Expect ')' after function parameters", TokenType.RPAREN)
 
         ret_type = None
         if self._check(TokenType.ARROW):
@@ -579,7 +597,8 @@ class Parser:
         """
 
         expr = self._parse_expr()
-        self._force_advance("Expect ';' after expression", TokenType.SEMI_COLON)
+        self._force_advance(
+            "Expect ';' after expression", TokenType.SEMI_COLON)
 
         return ExprStmt(expr.token, expr)
 
@@ -606,17 +625,37 @@ class Parser:
             return self._parse_jump_stmt()
         return self._parse_expr_stmt()
 
+    def _parse_type_stmt(self):
+        """ Parses a type statement.
+
+        Corresponding grammar rule for parsing.
+            type_stmt := "type" identifier "=" identifier ";"
+        """
+
+        type_token = self._advance()
+        new_type = self._force_advance("Expect new-type name", TokenType.IDENT)
+
+        self._force_advance("Expect '=' after type name", TokenType.ASSIGN)
+        old_type = self._force_advance("Expect new-type name", TokenType.IDENT)
+
+        self._force_advance(
+            "Expect ';' after type statement", TokenType.SEMI_COLON)
+
+        return TypeStmt(type_token, new_type, old_type)
+
     def _parse_top_level_stmt(self):
         """ Parses a top-level statement.
 
         Corresponding grammar rule for parsing.
-            top_level_stmt := function_stmt | let_stmt
+            top_level_stmt := function_stmt | let_stmt | type_stmt
         """
 
         if self._check(TokenType.FUNCTION):
             return self._parse_function_stmt()
         if self._check(TokenType.LET):
             return self._parse_let_stmt()
+        if self._check(TokenType.TYPE):
+            return self._parse_type_stmt()
 
         self._error("Unknown top-level statement")
 

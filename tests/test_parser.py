@@ -307,13 +307,13 @@ class TestParser:
         assert len(prog.stmts) == 1
         assert isinstance(prog.stmts[0], LetStmt)
 
-        var_list = prog.stmts[0].var_list
-        assert len(var_list) == 2
-        assert len(expected_decls) == len(var_list)
+        variables = prog.stmts[0].variables
+        assert len(variables) == 2
+        assert len(expected_decls) == len(variables)
 
-        for idx, var in enumerate(var_list):
-            self._test_ast_node(var["name"], expected_decls[idx]["name"])
-            self._test_ast_node(var["type"], expected_decls[idx]["type"])
+        for idx, var in enumerate(variables):
+            self._test_ast_node(var.token, expected_decls[idx]["name"])
+            self._test_ast_node(var.data_type, expected_decls[idx]["type"])
 
     def test_let_without_type_with_init(self):
 
@@ -350,13 +350,13 @@ class TestParser:
         assert len(prog.stmts) == 1
         assert isinstance(prog.stmts[0], LetStmt)
 
-        var_list = prog.stmts[0].var_list
-        assert len(var_list) == 2
-        assert len(expected_decls) == len(var_list)
+        variables = prog.stmts[0].variables
+        assert len(variables) == 2
+        assert len(expected_decls) == len(variables)
 
-        for idx, var in enumerate(var_list):
-            self._test_ast_node(var["name"], expected_decls[idx]["name"])
-            self._test_binary(var["init"], expected_decls[idx]["init"])
+        for idx, var in enumerate(variables):
+            self._test_ast_node(var.token, expected_decls[idx]["name"])
+            self._test_binary(var.init, expected_decls[idx]["init"])
 
     def test_let_with_type_with_init(self):
 
@@ -395,14 +395,14 @@ class TestParser:
         assert len(prog.stmts) == 1
         assert isinstance(prog.stmts[0], LetStmt)
 
-        var_list = prog.stmts[0].var_list
-        assert len(var_list) == 2
-        assert len(expected_decls) == len(var_list)
+        variables = prog.stmts[0].variables
+        assert len(variables) == 2
+        assert len(expected_decls) == len(variables)
 
-        for idx, var in enumerate(var_list):
-            self._test_ast_node(var["name"], expected_decls[idx]["name"])
-            self._test_ast_node(var["type"], expected_decls[idx]["type"])
-            self._test_binary(var["init"], expected_decls[idx]["init"])
+        for idx, var in enumerate(variables):
+            self._test_ast_node(var.token, expected_decls[idx]["name"])
+            self._test_ast_node(var.data_type, expected_decls[idx]["type"])
+            self._test_binary(var.init, expected_decls[idx]["init"])
 
     def test_function_stmt_with_type(self):
 

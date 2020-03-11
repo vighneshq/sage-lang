@@ -152,12 +152,12 @@ class LetStmt(AST):
 
     Attributes:
         token (Token): token representing the "let"
-        var_list ([{str: Token}]): list of variables declared
+        variables ([{str: Token}]): list of variables declared
     """
 
-    def __init__(self, token, var_list):
+    def __init__(self, token, variables):
         self.token = token
-        self.var_list = var_list
+        self.variables = variables
 
     def accept(self, visitor):
         """ Accept the visitor and run the right method.
@@ -167,6 +167,30 @@ class LetStmt(AST):
         """
 
         visitor.visit_let_stmt(self)
+
+
+class VarDecl(AST):
+    """ Concrete-class representing variable declaration nodes in the ast.
+
+    Attributes:
+        token (Token): token representing the "let".
+        data_type (Token): data-type of the variable.
+        init (Expr): intializing expressiong.
+    """
+
+    def __init__(self, token, data_type=None, init=None):
+        self.token = token
+        self.data_type = data_type
+        self.init = init
+
+    def accept(self, visitor):
+        """ Accept the visitor and run the right method.
+
+        Args:
+            visitor (Visitor): that wants to perform a certain action.
+        """
+
+        visitor.visit_var_decl(self)
 
 
 class FunctionStmt(AST):
@@ -193,3 +217,29 @@ class FunctionStmt(AST):
         """
 
         visitor.visit_function_stmt(self)
+
+
+class TypeStmt:
+    """ Concrete-class representing type statements nodes in the ast.
+
+    Attributes:
+        token (Token): token representing the word "type".
+        new_type (Token): new type being declared
+        old_type (Token): old type being aliased
+    """
+
+    def __init__(self, token, new_type, old_type):
+        self.token = token
+        self.new_type = new_type
+        self.old_type = old_type
+
+    def accept(self, visitor):
+        """ Accept the visitor and run the right method.
+
+        Args:
+            visitor (Visitor): that wants to perform a certain action.
+        """
+
+        pass
+        # TODO
+        # visitor.visit_var_decl(self)

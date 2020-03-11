@@ -40,12 +40,14 @@ class FunctionSymbol(Symbol):
         name (str) - identifier associated with the function.
         params (str) - identifiers of the formal parameters of the function.
         ret_type (str) - return type of the function.
+        scope (str) - scope of the function
     """
 
-    def __init__(self, name, params, ret_type):
+    def __init__(self, name, params, ret_type, scope):
         super().__init__(name)
         self.params = params
         self.ret_type = ret_type
+        self.scope = scope
 
 
 class SymbolTable:
@@ -74,7 +76,8 @@ class SymbolTable:
         self.insert(TypeSymbol("Int"))
         self.insert(TypeSymbol("Real"))
         self.insert(TypeSymbol("String"))
-        self.insert(TypeSymbol("None"))
+        self.insert(TypeSymbol("Null"))
+        self.insert(TypeSymbol("Void"))
 
     def insert(self, symbol):
         """ Insert the symbol into the symbol-table. """

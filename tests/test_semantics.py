@@ -46,7 +46,8 @@ class TestSymbolTable:
             {"name": "Int", "symbol_type": TypeSymbol},
             {"name": "Real", "symbol_type": TypeSymbol},
             {"name": "String", "symbol_type": TypeSymbol},
-            {"name": "None", "symbol_type": TypeSymbol},
+            {"name": "Null", "symbol_type": TypeSymbol},
+            {"name": "Void", "symbol_type": TypeSymbol},
         ]
 
         for builtin in builtins:
@@ -58,13 +59,6 @@ class TestSymbolTable:
 
 
 class TestSemanticAnalyzer:
-
-    def _check_error(self, semantic_analyzer, prog, msg):
-        with pytest.raises(SemanticError) as exc_info:
-            semantic_analyzer.check(prog)
-
-        assert semantic_analyzer.had_error
-        assert msg in str(exc_info.value)
 
     def test_variable_declared_before_use(self):
 
@@ -81,9 +75,10 @@ class TestSemanticAnalyzer:
         prog = parser.parse()
         assert not parser.had_error
 
-        semantic_analyzer = SemanticAnalyzer(debug=True)
+        semantic_analyzer = SemanticAnalyzer()
+        semantic_analyzer.check(prog)
 
-        self._check_error(semantic_analyzer, prog, "Undeclared variable")
+        assert semantic_analyzer.had_error
 
     def test_variable_declared_more_than_once(self):
 
@@ -101,11 +96,10 @@ class TestSemanticAnalyzer:
         prog = parser.parse()
         assert not parser.had_error
 
-        semantic_analyzer = SemanticAnalyzer(debug=True)
+        semantic_analyzer = SemanticAnalyzer()
+        semantic_analyzer.check(prog)
 
-        self._check_error(
-            semantic_analyzer, prog,
-            "declared more than once")
+        assert semantic_analyzer.had_error
 
     def test_variable_hidden_in_nested_scope(self):
 
@@ -125,7 +119,7 @@ class TestSemanticAnalyzer:
         prog = parser.parse()
         assert not parser.had_error
 
-        semantic_analyzer = SemanticAnalyzer(debug=True)
+        semantic_analyzer = SemanticAnalyzer()
         semantic_analyzer.check(prog)
 
         assert not semantic_analyzer.had_error
@@ -152,7 +146,183 @@ class TestSemanticAnalyzer:
         prog = parser.parse()
         assert not parser.had_error
 
-        semantic_analyzer = SemanticAnalyzer(debug=True)
+        semantic_analyzer = SemanticAnalyzer()
         semantic_analyzer.check(prog)
 
         assert not semantic_analyzer.had_error
+
+    def test_types_are_legal(self):
+
+        source = """
+        function main() {
+            let x: Node = gcd(10, 5);
+        }
+        """
+
+        lexer = Lexer(source)
+        parser = Parser(lexer)
+
+        prog = parser.parse()
+        assert not parser.had_error
+
+        semantic_analyzer = SemanticAnalyzer()
+        semantic_analyzer.check(prog)
+
+        assert semantic_analyzer.had_error
+
+    def test_assignment_type_is_compatible(self):
+
+        sources = [
+            {"source": "let x: Int = 5.1;", "compatible": False},
+            {"source": "let x: Real = \"Hello, World.\";",
+                "compatible": False},
+            {"source": "let c: Char = true;",
+                "compatible": False},
+            {"source": """ let x: Bool;
+                x = 'a'; """,
+                "compatible": False},
+            {"source": "let x : Real = 1;", "compatible": True},
+            {"source": "let x : Real, y: Int; y = x;", "compatible": False},
+            {
+                "source": """
+                    let x:Int = func();
+                }
+                function func() -> Int {
+                    return 3.14;
+            """,
+                "compatible": False
+            }
+        ]
+
+        for pair in sources:
+            mod_source = "function main() {\n" + pair["source"] + "\n}"
+            lexer = Lexer(mod_source)
+            parser = Parser(lexer)
+
+            prog = parser.parse()
+            assert not parser.had_error
+
+            semantic_analyzer = SemanticAnalyzer()
+            semantic_analyzer.check(prog)
+
+            assert not semantic_analyzer.had_error == pair["compatible"]
+
+    def test_operation_is_legal_for_types(self):
+
+        sources = [
+            {"source": "'a' + 1;", "legal": False},
+            {"source": "\"Hello\" - 1;", "legal": False},
+            {"source": "\"Hello\" * 1;", "legal": False},
+            {"source": "true / 1;", "legal": False},
+            {"source": "5.5 / 10;", "legal": True},
+            {"source": "5.5 % 10;", "legal": False},
+            {"source": "\"Hello, \" + \"World!\";", "legal": True},
+            {"source": "1 & 2;", "legal": True},
+            {"source": "1 | 2.5;", "legal": False},
+            {"source": "4 ^ 2.5;", "legal": False},
+            {"source": "4 << 2.0;", "legal": False},
+            {"source": "4 >> 2.0;", "legal": False},
+            {"source": "1 == \"1\";", "legal": False},
+            {"source": "true != 1;", "legal": False},
+            {"source": "true > 1;", "legal": False},
+            {"source": "true == false;", "legal": True},
+            {"source": "'a' >= 'b'';", "legal": True},
+            {"source": "'a' < 'b'';", "legal": True},
+            {"source": "'a' <= 'b'';", "legal": True},
+            {"source": "-5.5;", "legal": True},
+            {"source": "-'a';", "legal": False},
+            {"source": "~10;", "legal": True},
+            {"source": "~3.14;", "legal": False},
+            {"source": "not 1.4;", "legal": False},
+            {"source": "not true;", "legal": True},
+            {"source": "false and true;", "legal": True},
+            {"source": "123 or true;", "legal": False},
+        ]
+
+        for pair in sources:
+            mod_source = "function main() {\n" + pair["source"] + "\n}"
+            lexer = Lexer(mod_source)
+            parser = Parser(lexer)
+
+            prog = parser.parse()
+            assert not parser.had_error
+
+            semantic_analyzer = SemanticAnalyzer()
+            semantic_analyzer.check(prog)
+
+            assert not semantic_analyzer.had_error == pair["legal"]
+
+    def test_function_returns_the_declared_type(self):
+
+        source = """
+            function main() {
+            let x: Int = gcd(10, 5);
+        }
+
+        function gcd(a: Int, b: Int) -> Int {
+            if b == 0 {
+                return a;
+            }
+
+            return "Hello, World!;
+        }
+        """
+
+        lexer = Lexer(source)
+        parser = Parser(lexer)
+
+        prog = parser.parse()
+        assert not parser.had_error
+
+        semantic_analyzer = SemanticAnalyzer()
+        semantic_analyzer.check(prog)
+
+        assert semantic_analyzer.had_error
+
+    def test_function_parameter_types_are_correct(self):
+
+        sources = [{
+                "source": """
+            function main() {
+            let x: Int = gcd(10, 5);
+            }
+
+            function gcd(a: Int, b: Int) -> Int {
+                if b == 0 {
+                    return a;
+                }
+
+                return gcd(b, a % b);
+            }
+            """,
+                "correct": True
+            },
+            {
+                "source": """
+            function main() {
+            let x: Int = gcd(10.5, 5);
+            }
+
+            function gcd(a: Int, b: Int) -> Int {
+                if b == 0 {
+                    return a;
+                }
+
+                return gcd(b, a % b);
+            }
+            """,
+                "correct": False,
+            }
+            ]
+
+        for pair in sources:
+            lexer = Lexer(pair["source"])
+            parser = Parser(lexer)
+
+            prog = parser.parse()
+            assert not parser.had_error
+
+            semantic_analyzer = SemanticAnalyzer()
+            semantic_analyzer.check(prog)
+
+            assert not semantic_analyzer.had_error == pair["correct"]

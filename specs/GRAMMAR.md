@@ -36,8 +36,8 @@
 
 ### Let Statement
 
-**let_stmt** &rarr; "let" **var_list** ";" \
-**var_list** &rarr; identifier [ **identifier** ] [ = **expr** ] {"," **var_list** }
+**let_stmt** &rarr; "let" **variables** ";" \
+**variables** &rarr; identifier [ **identifier** ] [ = **expr** ] {"," **variables** }
 
 ### Function Stmt
 

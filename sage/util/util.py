@@ -60,6 +60,14 @@ class Visitor(ABC):
         """
         pass
 
+    # @abstractmethod
+    # def visit_type_stmt(self, node):
+    #       TODO
+    #     """ Visit type statement ast node, and perform some task depending
+    #     on type of self (type of visitor).
+    #     """
+    #     pass
+
     @abstractmethod
     def visit_while_stmt(self, node):
         """ Visit while statement ast node, and perform some task depending
@@ -77,6 +85,13 @@ class Visitor(ABC):
     @abstractmethod
     def visit_let_stmt(self, node):
         """ Visit let statement ast node, and perform some task depending
+        on type of self (type of visitor).
+        """
+        pass
+
+    @abstractmethod
+    def visit_var_decl(self, node):
+        """ Visit var declaration ast node, and perform some task depending
         on type of self (type of visitor).
         """
         pass
